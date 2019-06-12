@@ -1,15 +1,36 @@
+import { AuthServiceService } from './auth-service.service';
 import { Injectable } from '@angular/core';
-import {CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
+import {CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot, Router } from '@angular/router';
+import { Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthGuardService implements CanActivate {
   
+  constructor(
+    private auth: AuthServiceService,
+    private router: Router) { }
+    
   canActivate(
-    route: import("@angular/router").ActivatedRouteSnapshot, state: import("@angular/router").RouterStateSnapshot): boolean | import("rxjs").Observable<boolean> | Promise<boolean> {
-    throw new Error("Method not implemented.");
-  }
+    next: ActivatedRouteSnapshot,
+    state: RouterStateSnapshot): Observable<boolean> | Promise<boolean> | boolean {
+      
+      if(this.auth.isAccessTokenInvalid()) {
 
-  constructor() { }
+        return this.auth.obterNovoAccessToken()
+          .then(() => {
+            if(this.auth.isAccessTokenInvalid()) {
+              this.router.navigate(['/login']);
+              return false;
+            }
+
+            return true;
+          })
+      } else if(next.data.roles) {
+        this.router.navigate(['/login']);
+      }
+
+      return true;
+  }
 }
